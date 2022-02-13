@@ -44,7 +44,7 @@
 
     </div>
     <script>
-        const socket = io('http://localhost:4000');
+        const socket = io('https://socket-sdk.herokuapp.com');
 
         socket.on('socket-data', (data) => {
             let user = data.response;
