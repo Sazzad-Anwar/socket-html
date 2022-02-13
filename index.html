@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="./src/style.css">
+    <script src="https://cdn.socket.io/4.4.1/socket.io.min.js"
+        integrity="sha384-fKnu0iswBIqkjxrhQCTZ7qlLHOFEgNkRmK2vaO/LbTZSXdJfAu6ewRBdwHPhBo/H" crossorigin="anonymous">
+        </script>
+    <title>Experimental</title>
+</head>
+
+<body>
+
+    <div class="flex justify-center flex-col container mx-auto">
+        <h1 class="text-center text-2xl">Socket Test Using HTML</h1>
+        <div class="flex items-center justify-center my-5">
+
+            <input id="sendUserDataInput" type="number" value="1"
+                class="focus:outline-none px-4 py-2 border border-purple-800">
+            <button id="sendUserData"
+                class="focus:outline-none border rounded bg-blue-500 text-white px-4 py-2 text-center w-40">
+                Send user data
+            </button>
+
+        </div>
+
+        <div class="flex justify-center items-center" id="successMsg">
+        </div>
+
+        <div class="flex justify-center items-center">
+            <button id="disableBtn"
+                class="focus:outline-none border rounded bg-blue-500 text-white px-4 py-2 text-center w-40">
+                Disable Input
+            </button>
+        </div>
+
+        <div class="flex justify-center">
+            <div class="mt-5" id="userData">
+            </div>
+        </div>
+
+    </div>
+    <script>
+        const socket = io('http://localhost:4000');
+
+        socket.on('socket-data', (data) => {
+            let user = data.response;
+
+            if (data.isApiCall && data.requestName === 'user') {
+
+                document.querySelector('#userData').innerHTML = `
+                <div class="border p-5 border-purple-800 rounded-md">
+                    <div class="text-2xl font-semibold">ID: ${user.id}</div>
+                    <div class="text-2xl font-semibold">Name: ${user.name}</div>
+                    <div class="text-2xl font-semibold">Email: ${user.email}</div>
+                    <div class="text-2xl font-semibold">Phone: ${user.phone}</div>
+                    <div class="text-2xl font-semibold">Website: ${user.website}</div>
+                </div>
+            `
+            }
+
+            if (!data.isApiCall && data.requestName === 'stop') {
+                if (data.disableInput) {
+                    document.querySelector('#sendUserData').style.display = 'none';
+                    document.querySelector('#sendUserDataInput').style.display = 'none';
+                    document.querySelector('#disableBtn').style.display = 'none';
+                } else {
+                    document.querySelector('#sendUserData').style.display = 'block';
+                    document.querySelector('#sendUserDataInput').style.display = 'block';
+                    document.querySelector('#disableBtn').style.display = 'block';
+                }
+
+            }
+
+        });
+
+        document.querySelector('#sendUserData').addEventListener('click', () => {
+            const userData = document.querySelector('input').value;
+            socket.emit('socket-data', {
+                url: `https://jsonplaceholder.typicode.com/users/${userData}`,
+                method: 'GET',
+                isApiCall: true,
+                requestName: 'user',
+                body: '',
+                applicationId: 'chat-application'
+            });
+            document.querySelector('#successMsg').innerHTML = `
+                <span class="px-4 py-2 my-4 border rounded border-purple-800 text-base font-semibold">User Details Sent !</span>
+            `
+        })
+
+        document.querySelector('#disableBtn').addEventListener('click', () => {
+
+            let disableInputHandle = () => {
+                socket.emit('socket-data', {
+                    isApiCall: false,
+                    requestName: 'stop',
+                    applicationId: 'admin-panel',
+                    disableInput: true
+                });
+                document.querySelector('#disableBtn').innerText = 'Enable Input';
+            }
+
+            let enableInputHandle = () => {
+                socket.emit('socket-data', {
+                    isApiCall: false,
+                    requestName: 'stop',
+                    applicationId: 'admin-panel',
+                    disableInput: false
+                });
+                document.querySelector('#disableBtn').innerText = 'Disable Input';
+            }
+
+            document.querySelector('#disableBtn').innerText === 'Disable Input' ? disableInputHandle() : enableInputHandle()
+
+            // if (document.querySelector('#disableBtn').innerText = 'Disable Input') {
+            //     socket.emit('socket-data', {
+            //         isApiCall: false,
+            //         requestName: 'stop',
+            //         applicationId: 'admin-panel',
+            //         disableInput: true
+            //     });
+            //     document.querySelector('#disableBtn').innerText = 'Enable Input';
+            // } else {
+            //     socket.emit('socket-data', {
+            //         isApiCall: false,
+            //         requestName: 'stop',
+            //         applicationId: 'admin-panel',
+            //         disableInput: false
+            //     });
+            //     document.querySelector('#disableBtn').innerText = 'Disable Input';
+            // }
+        })
+
+
+    </script>
+</body>
+
+</html>
