@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="./src/style.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
+    <script src="https://cdn.socket.io/4.4.1/socket.io.min.js"
+        integrity="sha384-fKnu0iswBIqkjxrhQCTZ7qlLHOFEgNkRmK2vaO/LbTZSXdJfAu6ewRBdwHPhBo/H" crossorigin="anonymous">
+        </script>
+    <title>Chat</title>
+</head>
+
+<body class="bg-black">
+    <div class="bg-gray-700 w-screen overflow-hidden grid-cols-1 gap-0 container mx-auto shadow-xl chat-box grid">
+        <!-- <div class="w-full h-full userList px-3 py-5 bg-gray-900"></div> -->
+        <div class="w-full col-span-3 h-full border border-transparent rounded-md overflow-hidden relative">
+            <div class="h-screen w-full overflow-auto pb-20 chat-body scroll-smooth"></div>
+            <div class="w-full absolute bottom-0 left-0 right-0">
+                <div id="typing"></div>
+                <div class="flex items-start bg-gray-700">
+                    <input type="text" id="msgInput" onfocus="typing(true)" onblur="typing(false)"
+                        class="w-full py-2 m-0 bg-gray-700 shadow-2xl focus:outline-none text-white px-3 border border-gray-800" />
+                    <button id="sendMsg" class="px-8 py-2 bg-gray-900 flex items-center justify-between">
+                        <i class="bi bi-send-fill text-lg text-white mr-3"></i>
+                        <span class="text-white text-base">Send</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <script>
+        const scrollToBottom = () => {
+            let elem = document.querySelector('.chat-body');
+            elem.scrollTop = elem.scrollHeight;
+        }
+
+        scrollToBottom();
+
+        const socket = io('https://socket-sdk.herokuapp.com/chat', {
+            transport: 'websocket'
+        });
+
+        let name;
+
+        let users = []
+
+        let msgTone = new Audio('./src/msg.mp3');
+
+        localStorage.getItem('name') ? socket.emit('user-joined', ({ name: localStorage.getItem('name'), socketId: socket.id })) : window.location.href = './takeName.html';
+
+        // socket.on('user-joined', data => {
+
+        //     if (document.querySelector('.userList div') && document.querySelector('.userList div').length) {
+        //         document.querySelector('.userList').forEach(div => {
+        //             div.remove()
+        //         })
+        //     } else if (!document.querySelector('.userList div')?.length || document.querySelector('.userList div') === undefined) {
+
+        //         data.filter(user => user.name !== name).forEach(user => {
+        //             document.querySelector('.userList').insertAdjacentHTML("beforeend", `
+        //                 <div class="flex items-center bg-gray-700 py-3 mb-4 px-4 rounded-md cursor-pointer scale-100 active:scale-95 transition duration-150 ease-in-out shadow-lg">
+        //                     <img class="rounded-full ring-2 ring-purple-500" height="40" width="40" src="https://picsum.photos/50"
+        //                         alt="img" />
+        //                     <div class="ml-3">
+        //                         <h1 class="text-2xl font-semibold text-white">${user.name}</h1>
+        //                     </div>
+        //                 </div>
+        //             `)
+
+        //         })
+        //     }
+        //     console.log(data)
+        // })
+
+        socket.on('message', (data) => {
+            document.querySelector('.chat-body').insertAdjacentHTML("beforeend", `
+            <div class="flex items-start p-5 otherChat">
+                <img class="rounded-full ring-2 ring-purple-500" height="40" width="40" src="https://picsum.photos/50"
+                    alt="img" />
+                <div class="ml-3 max-w-xl border border-gray-900 bg-gray-900 rounded-md shadow-md text-white px-4 py-2">
+                    <p>${data.name}</p>
+                    <p>${data.message}</p>
+                    <p class="text-sm pt-2 float-right">
+                        <i class="bi bi-check2"></i> ${new Date(data.timeStamp).toLocaleTimeString('en-US',
+                {
+                    weekday: "short",
+                    year: "2-digit",
+                    month: "short",
+                    day: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                })}
+                    </p>
+                </div>
+            </div>
+            `)
+            scrollToBottom();
+            msgTone.play();
+        });
+
+        document.querySelector("#msgInput").onchange = (e) => {
+            socket.emit('typing', { name: localStorage.getItem('name') })
+        }
+
+        const typing = (isTyping) => {
+            socket.emit('typing', { name: localStorage.getItem('name'), isTyping })
+        }
+
+        socket.on('typing', data => {
+            if (data.isTyping) {
+                document.querySelector('#typing').insertAdjacentHTML("beforeend", `
+                <p class="text-white animate-pulse ml-3">${data.name} is typing...</p>
+            `)
+            } else {
+                document.querySelector('#typing').innerHTML = ''
+            }
+        })
+
+        const sendMsg = () => {
+            let message = document.querySelector("#msgInput").value;
+
+            if (message.length > 0) {
+                socket.emit('message', ({
+                    message,
+                    name: localStorage.getItem('name'),
+                    timeStamp: new Date(),
+                    socketId: socket.id
+                }))
+
+                document.querySelector('.chat-body').insertAdjacentHTML("beforeend", `
+                    <div class="flex flex-row-reverse items-start p-5 myChat">
+                        <img class="rounded-full ring-2 ring-purple-500" height="40" width="40" src="https://picsum.photos/50"
+                            alt="img" />
+                        <div class="mr-3 border text-right border-gray-900 max-w-xl bg-gray-900 rounded-md shadow-md text-white px-4 py-2">
+                            <p>${localStorage.getItem('name')}</p>
+                            <p>
+                                ${message}
+                            </p>
+                            <p class="text-sm pt-4 float-left">
+                                <i class="bi bi-check2"></i> ${new Date().toLocaleTimeString('en-US',
+                    {
+                        weekday: "short",
+                        year: "2-digit",
+                        month: "short",
+                        day: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                    })}
+                            </p>
+                        </div>
+                    </div>
+                `)
+
+                document.querySelector("#msgInput").value = '';
+            }
+            scrollToBottom();
+        }
+
+        document.querySelector('#sendMsg').addEventListener('click', () => {
+            sendMsg()
+        })
+
+        document.addEventListener("keyup", function (event) {
+            if (event.key === 'Enter') {
+                sendMsg()
+            }
+        });
+
+    </script>
+</body>
+
+</html>

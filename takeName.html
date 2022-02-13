@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="./src/style.css">
+    <title>Take Name</title>
+</head>
+
+<body>
+    <div class="h-screen justify-center items-center nameInput-box flex">
+        <div class="w-[25rem] h-auto my-auto bg-gray-700 rounded-md backdrop-blur-lg p-5">
+            <h1 class="text-2xl mb-3 text-center text-white">Save your name</h1>
+            <input type="text" id="nameInput" placeholder="Name"
+                class="w-full py-2 m-0 bg-gray-700 shadow-2xl mb-5 focus:outline-none text-white px-3 border border-gray-800" />
+            <button id="saveName"
+                class="px-8 w-full py-2 bg-gray-900 rounded-md active:scale-95 scale-100 transition duration-150 ease-in-out shadow-2xl text-white text-center">Save</button>
+        </div>
+    </div>
+
+    <script>
+        document.querySelector('#saveName').addEventListener('click', () => {
+            name = document.querySelector('#nameInput').value;
+            if (name !== '') {
+                localStorage.setItem('name', name)
+                window.location.href = `./chat.html`;
+            }
+        })
+    </script>
+</body>
+
+</html>
